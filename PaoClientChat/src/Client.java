@@ -27,11 +27,16 @@ public class Client extends JFrame implements ActionListener{
 	private MenuItem exit, rename, sendTo, saveTxt, ab;
 	String mesaj = "";
 	private String name = "";
-	
 	Socket C;
 	private DataInputStream in;
 	private DataOutputStream out;
-	
+	public String [] list;
+	public boolean valid(String N){
+		if(N.contains("@") || N.contains("~") || N.contains("+")
+				|| N.contains(" ") || N.contains("/") || N.contains("\\"))
+			return false;
+		return true;
+	}
 	public class THb extends Thread {
 		public void run() {
 			String aux = "";
@@ -47,7 +52,7 @@ public class Client extends JFrame implements ActionListener{
 					char [] Tst = aux.toCharArray();
 					if(Tst[0] != '@') primite.append(aux);
 					else {
-						String [] list = aux.split("@");
+						list = aux.split("@"); //String [] list = aux.split("@");
 						String onl = "";
 						for(int i = 1; i < list.length; i++){
 							onl = onl + list[i] + "\n";
@@ -58,13 +63,25 @@ public class Client extends JFrame implements ActionListener{
 			}
 		}
 	}
-	
 	public Client(){
+		online = new TextArea(10, 25);
+		online.setEditable(false);
 		
 		final JFrame parent  = new JFrame();
 		parent.setDefaultCloseOperation(EXIT_ON_CLOSE);
-		name = JOptionPane.showInputDialog(parent,"Alege nume",null);
-		if(name.equals(""))  System.exit(0);
+		boolean ok = false;
+		Object ion;
+		do {
+			ion = JOptionPane.showInputDialog(parent, "Alege nume");
+			if (ion != null) {
+				name = (String) ion;
+				if (!name.isEmpty()){
+					if(name.trim().length() > 0 && valid(name)) ok = true;
+				}
+			} else
+				System.exit(JFrame.NORMAL);
+		} while (ok == false);
+		name = name.trim();
 		String em = "";
 		try {
 			C = new Socket("localhost", 5005);
@@ -77,6 +94,18 @@ public class Client extends JFrame implements ActionListener{
 				JOptionPane.showMessageDialog(parent, ""
 						+ "Numele mai exista pe server");
 				System.exit(NORMAL);
+			}
+			else {
+				System.out.println(em);
+				list = em.split("@");
+				System.out.println(list[0] + " " + list[1]);
+				String onl = "";
+				for(int i = 1; i < list.length; i++){
+					onl = onl + list[i] + "\n";
+				}
+				System.out.println("Onl: " + onl);
+				online.setText(onl);
+				System.out.println(online.getText());
 			}
 		} catch (IOException e) {
 			
@@ -112,11 +141,9 @@ public class Client extends JFrame implements ActionListener{
 		panel.add(primite, c);
 		primite.setEditable(false);
 		
-		online = new TextArea(10, 25);
-		online.setEditable(false);
+		
 		c.gridx = 1;
 		c.gridy = 1;
-		online.setText("online");
 		panel.add(online, c);
 		
 		
@@ -129,30 +156,7 @@ public class Client extends JFrame implements ActionListener{
 		c.gridx = 0;
 		c.gridy = 6;
 		panel.add(trimite, c);
-		
-		/*cu = new JButton("@");
-		c.gridx = 0;
-		c.gridy = 7;
-		c.gridwidth = GridBagConstraints.RELATIVE;
-		c.anchor = GridBagConstraints.WEST;
-		panel.add(cu, c);
-		
-		change = new JButton("Schimba nume");
-		c.gridx = 0;
-		c.gridy = 8;
-		c.anchor = GridBagConstraints.WEST;
-		panel.add(change, c);
-		
-		
-		logout = new JButton("Iesire");
-		c.gridx = 0;
-		c.gridy = 9;
-		panel.add(logout, c);
-		c.anchor = GridBagConstraints.WEST;
-		*/
-		
-		
-		
+				
 		conversatie = new Menu("Conversatie");
 		menubar.add(conversatie);
 
@@ -178,13 +182,11 @@ public class Client extends JFrame implements ActionListener{
 		trimite.addActionListener(e);
 		
 		event1 ev = new event1();
-		//cu.addActionListener(ev);
 		sendTo.addActionListener(ev);
 		
 		event2 evv = new event2();
-		//logout.addActionListener(evv);
 		exit.addActionListener(evv);
-		//change.addActionListener(this);
+
 		
 		rename.addActionListener(this);
 		frame.setTitle("Chat by Kitz - Welcome " + name);
@@ -200,6 +202,7 @@ public class Client extends JFrame implements ActionListener{
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			String sz = deTrimis.getText();
+			if(!sz.isEmpty()){
 			deTrimis.setText("");
 			char [] t = sz.toCharArray();
 			if(t[0] == '@'){
@@ -217,6 +220,7 @@ public class Client extends JFrame implements ActionListener{
 				}
 			}
 		}
+		}
 		
 	}
 	
@@ -229,6 +233,7 @@ public class Client extends JFrame implements ActionListener{
 				in.close();
 				out.close();
 				C.close();
+				online.setText("");
 			} catch (IOException e1) {
 				System.out.println("Nu s-a putut face deconectarea");
 			}
@@ -242,8 +247,21 @@ public class Client extends JFrame implements ActionListener{
 		public void actionPerformed(ActionEvent e) {
 				String cuCine = "";
 				final JFrame parent  = new JFrame();
-				cuCine = JOptionPane.showInputDialog(parent,"Alege nume",null);
-				deTrimis.setText("@" + cuCine + "@");
+				boolean ok = false;
+				Object ion;
+				do {
+					ion =JOptionPane.showInputDialog(parent,"Alege nume",null);
+					if (ion != null) {
+						cuCine = (String) ion;
+						if (!cuCine.equals("") && valid(cuCine)){
+							if(cuCine.trim().length() > 0){
+								ok = true;
+								deTrimis.setText("@" + cuCine + "@");
+							}
+						}
+					} else
+						break;
+				} while (ok == false);
 		}
 	}
 	
@@ -290,14 +308,38 @@ public class Client extends JFrame implements ActionListener{
 	public void actionPerformed(ActionEvent e) {
 		String nickNou = "";
 		final JFrame parent  = new JFrame();
-		nickNou = JOptionPane.showInputDialog(parent,"Alege un nou nume",null);
-		try{
-			out.writeUTF("~"+nickNou+"~"+name+"~");
-			name = nickNou;
-			this.frame.setTitle("Chat by Kitz - Welcome " + name);
-		}
-		catch(Exception E){
-			System.out.println("Ceva a mers prost");
-		}
+		boolean ok = false;
+		Object ion;
+		do {
+			ion = JOptionPane.showInputDialog(parent,"Alege un nou nume",null);
+			if (ion != null) {
+				nickNou = (String) ion;
+				if (!nickNou.equals("") && (nickNou.trim().length() > 0) && valid(nickNou)){
+					nickNou = nickNou.trim();
+					ok = true;
+					boolean gasit = false;
+					if(list != null)
+					for(int i = 0; i < list.length; i++)
+						if(nickNou.equals(list[i])) {gasit = true; break;}
+					if(gasit == false)
+					try{
+						out.writeUTF("~"+nickNou+"~"+name+"~");
+						name = nickNou;
+						this.frame.setTitle("Chat by Kitz - Welcome " + name);
+						
+					}
+					catch(Exception E){
+						System.out.println("Ceva a mers prost");
+					}
+					else {
+						final JFrame par  = new JFrame();
+						String buff;
+						buff = "Numele mai exista pe server";
+						JOptionPane.showMessageDialog(par, buff, "Alert", JOptionPane.INFORMATION_MESSAGE);
+					}
+				}
+			} else
+				break;
+		} while (ok == false);
     }
 }
